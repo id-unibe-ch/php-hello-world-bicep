@@ -20,6 +20,7 @@ env:
 jobs:
   bicep-whatif:
     name: 'Bicep Whatif'
+    if: '! github.event.pull_request.draft'
     runs-on: ubuntu-latest
 
     steps:
