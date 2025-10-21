@@ -11,55 +11,50 @@ param environmentName string
 
 @minLength(1)
 @maxLength(64)
-@description('Name of the the environment which is used to generate a short unique hash used in all resources.')
+@description('Name of the service.')
 param serviceName string = 'php-hello-mr'
 
 
 @minLength(1)
 @maxLength(64)
-@description('Primary location for all resources')
+@description('Primary location for all resources, taken for the deployment location by default.')
 param location string = deployment().location
 
-// Optional parameters to override the default azd resource naming conventions.
-// Add the following to main.parameters.json to provide values:
-// "resourceGroupName": {
-//      "value": "myGroupName"
-// }
-param resourceGroupName string = ''
+@description('Enable telemetry for resources that support it.')
+param enableTelemetry bool = false
+
+param resourceGroupName string = 'rg-${serviceName}-${environmentName}'
 // param appServicePlanName string = ''
 // param webServiceName string = ''
 // param logAnalyticsName string = ''
 // param applicationInsightsDashboardName string = ''
 // param applicationInsightsName string = ''
 
-var abbrs = loadJsonContent('./abbreviations.json')
 
 // tags that should be applied to all resources.
 var tags = {
   // Tag all resources with the environment name.
-  division: 'id'
-  subDivision: 'idci'
-  environment: environmentName
-  managedBy: 'azure-cli-bicep'
-}
-
-// Generate a unique token to be used in naming resources.
-// Remove linter suppression after using.
-#disable-next-line no-unused-vars
-var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
-
-// Organize resources in a resource group
-resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
-  name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${serviceName}-${environmentName}'
-  location: location
-  tags: tags
+  Division: 'id'
+  SubDivision: 'idci'
+  Environment: 'Non-Prod'
+  ManagedBy: 'bicep'
 }
 
 // Add resources to be provisioned below.
-// A full example that leverages azd bicep modules can be seen in the todo-python-mongo template:
-// https://github.com/Azure-Samples/todo-python-mongo/tree/main/infra
-
-
+// Organize resources in a resource group
+module resourceGroup 'br/public:avm/res/resources/resource-group:0.4.2' = {
+  name: resourceGroupName
+  params: {
+    // Required parameters
+    name: resourceGroupName
+    // Non-required parameters
+    tags: union(tags, {
+     'hidden-title': 'This is visible in the resource name'
+      Role: 'DeploymentValidation'
+    })
+    enableTelemetry: enableTelemetry
+  }
+}
 
 // Add outputs from the deployment here, if needed.
 //
@@ -74,4 +69,4 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 output AZURE_SUBSCRIPTION_ID string = subscription().subscriptionId
-
+output AZURE_RESOURCE_GROUP string = resourceGroup.outputs.name
