@@ -39,7 +39,9 @@ jobs:
     - name: Bicep Lint
       uses: Azure/cli@v1
       with:
-        inlineScript: az bicep build --file main.bicep
+        inlineScript: |
+            az bicep build \
+              --file infra/main.bicep
 
     # Validate whether a template is valid at subscription scope
     - name: Bicep Validate
@@ -48,7 +50,8 @@ jobs:
         inlineScript: |
           az deployment sub validate \
             --name validate-${{ github.run_id }} \
-            --template-file main.bicep \
+            --template-file infra/main.bicep \
+            --parameters infra/main.bicepparam \
             --location $LOCATION
 
     # Preview changes
@@ -58,7 +61,8 @@ jobs:
         inlineScript: |
           az deployment sub what-if \
             --name whatif-${{ github.run_id }} \
-            --template-file main.bicep \
+            --template-file infra/main.bicep \
+            --parameters infra/main.bicepparam \
             --location $LOCATION > whatif
 
       # Create string output of Whatif
@@ -131,6 +135,7 @@ jobs:
           az deployment sub create \
             --name deploy-${{ github.run_id }} \
             --parameters "@infra/main.parameters.json" \
-            --template-file main.bicep \
+            --template-file infra/main.bicep \
+            --parameters infra/main.bicepparam \
             --location $LOCATION
 
