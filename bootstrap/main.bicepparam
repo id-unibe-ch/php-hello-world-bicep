@@ -1,7 +1,7 @@
 using './main.bicep'
 
 // Name of the resource group for the identity
-param identityResourceGroupName = 'rg-deployment-identities-switzerlandnorth-001'
+param identityResourceGroupName = 'rg-php-hello-world-identities-switzerlandnorth-001'
 
 // Location for the resources
 param location = 'switzerlandnorth'
