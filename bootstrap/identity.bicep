@@ -4,17 +4,24 @@ param tags object
 module userAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.0' = {
   name: 'userAssignedIdentityDeployment'
   params: {
-    name: 'id-appdeployidentity-prod-switzerlandnorth-001'
+    name: 'id-php-hello-hello-gh-deployment'
     federatedIdentityCredentials: [
-  {
-    audiences: [
-      'api://AzureADTokenExchange'
+      {
+        audiences: [
+          'api://AzureADTokenExchange'
+        ]
+        issuer: 'https://token.actions.githubusercontent.com'
+        name: 'fcred-php-hello-world-gh-branch-main'
+        subject: 'repo:${githubRepository}:ref:refs/heads/main'
+      }, {
+        audiences: [
+          'api://AzureADTokenExchange'
+        ]
+        issuer: 'https://token.actions.githubusercontent.com'
+        name: 'fcred-php-hello-world-gh-pr'
+        subject: 'repo:${githubRepository}:pull_request'
+      }
     ]
-    issuer: 'https://token.actions.githubusercontent.com'
-    name: 'github-deploy'
-    subject: 'repo:${githubRepository}'
-  }
-]
 
     location: resourceGroup().location
     tags: tags
