@@ -15,3 +15,5 @@ $weekdays = array(
 echo "Hello World!<br />";
 echo sprintf("Es ist %s, der %s, Uhrzeit: %s", $weekdays[date("l")], date("d.m.Y"), date("H:i:s"));
 echo "<br />Gruss aus der Cloud";
+
+echo "<pre>", var_dump($_SERVER), "</pre>";
