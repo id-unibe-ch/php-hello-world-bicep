@@ -24,8 +24,8 @@ param location string = deployment().location
 param enableTelemetry bool = false
 
 param resourceGroupName string = 'rg-${serviceName}-${environmentName}'
-// param appServicePlanName string = ''
-// param webServiceName string = ''
+param appServicePlanName string = 'asp-${serviceName}-${environmentName}'
+param appServiceName string = 'app-${serviceName}-${environmentName}'
 // param logAnalyticsName string = ''
 // param applicationInsightsDashboardName string = ''
 // param applicationInsightsName string = ''
@@ -42,20 +42,64 @@ var tags = {
 
 // Add resources to be provisioned below.
 // Organize resources in a resource group
-module resourceGroup 'br/public:avm/res/resources/resource-group:0.4.2' = {
+// module resourceGroup 'br/public:avm/res/resources/resource-group:0.4.2' = {
+//   name: 'resourceGroupDeployment'
+//   params: {
+//     // Required parameters
+//     name: resourceGroupName
+//     // Non-required parameters
+//     tags: union(tags, {
+//      'hidden-title': 'This is visible in the resource name'
+//       Role: 'DeploymentValidation'
+//     })
+//     enableTelemetry: enableTelemetry
+//   }
+// }
+
+resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: resourceGroupName
+  location: location
+  tags: union(tags, {
+    'hidden-title': 'Can be deleted after deployment'
+    Role: 'DeploymentValidation'
+  })
+}
+
+module servicePlan 'br/public:avm/res/web/serverfarm:0.5.0' = {
+  scope: resourceGroup
+  name: 'serverfarmDeployment'
   params: {
-    // Required parameters
-    name: resourceGroupName
-    // Non-required parameters
-    tags: union(tags, {
-     'hidden-title': 'This is visible in the resource name'
-      Role: 'DeploymentValidation'
-    })
+    name: appServicePlanName
+    skuName: 'F1'
+    skuCapacity: 1
+    kind: 'linux'
+    tags: tags
     enableTelemetry: enableTelemetry
   }
 }
 
+module webApp 'br/public:avm/res/web/site:0.19.3' = {
+  scope: resourceGroup
+  name: 'phpWebApp'
+  params: {
+    name: appServiceName
+    // location: resourceGroup.location
+    serverFarmResourceId: servicePlan.outputs.resourceId
+    kind: 'app,linux'
+    siteConfig: {
+      linuxFxVersion: 'php|8.3' // Latest supported PHP version
+      appSettings: [
+        {
+          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
+          value: 'false'
+        }
+      ]
+    }
+    publicNetworkAccess: 'Disabled'
+    httpsOnly: true
+    enableTelemetry: enableTelemetry
+  }
+}
 // Add outputs from the deployment here, if needed.
 //
 // This allows the outputs to be referenced by other bicep deployments in the deployment pipeline,
@@ -69,4 +113,5 @@ module resourceGroup 'br/public:avm/res/resources/resource-group:0.4.2' = {
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 output AZURE_SUBSCRIPTION_ID string = subscription().subscriptionId
-output AZURE_RESOURCE_GROUP string = resourceGroup.outputs.name
+output AZURE_RESOURCE_GROUP string = resourceGroup.name
+output AZURE_APP_SERVICE_PLAN string = servicePlan.outputs.name
